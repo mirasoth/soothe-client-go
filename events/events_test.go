@@ -3,7 +3,7 @@ package events
 import (
 	"testing"
 
-	"github.com/mirasurf/lepton/soothe-client-go/verbosity"
+	"github.com/mirasurf/lepton/soothe-client-go"
 )
 
 func TestParseNamespace_Valid(t *testing.T) {
@@ -60,10 +60,10 @@ func TestParseNamespace_DeepPath(t *testing.T) {
 func TestClassifyEventVerbosity_Quiet(t *testing.T) {
 	tests := []struct {
 		ns   string
-		want verbosity.VerbosityTier
+		want soothe.VerbosityTier
 	}{
-		{EventChitchatResponse, verbosity.TierQuiet},
-		{EventFinalReport, verbosity.TierQuiet},
+		{EventChitchatResponse, soothe.TierQuiet},
+		{EventFinalReport, soothe.TierQuiet},
 	}
 	for _, tt := range tests {
 		got := ClassifyEventVerbosity(tt.ns)
@@ -76,17 +76,17 @@ func TestClassifyEventVerbosity_Quiet(t *testing.T) {
 func TestClassifyEventVerbosity_Normal(t *testing.T) {
 	tests := []struct {
 		ns   string
-		want verbosity.VerbosityTier
+		want soothe.VerbosityTier
 	}{
-		{EventPlanCreated, verbosity.TierNormal},
-		{EventPlanStepStarted, verbosity.TierNormal},
-		{EventPlanStepCompleted, verbosity.TierNormal},
-		{EventBrowserStarted, verbosity.TierNormal},
-		{EventBrowserCompleted, verbosity.TierNormal},
-		{EventClaudeStarted, verbosity.TierNormal},
-		{EventClaudeCompleted, verbosity.TierNormal},
-		{EventResearchStarted, verbosity.TierNormal},
-		{EventResearchCompleted, verbosity.TierNormal},
+		{EventPlanCreated, soothe.TierNormal},
+		{EventPlanStepStarted, soothe.TierNormal},
+		{EventPlanStepCompleted, soothe.TierNormal},
+		{EventBrowserStarted, soothe.TierNormal},
+		{EventBrowserCompleted, soothe.TierNormal},
+		{EventClaudeStarted, soothe.TierNormal},
+		{EventClaudeCompleted, soothe.TierNormal},
+		{EventResearchStarted, soothe.TierNormal},
+		{EventResearchCompleted, soothe.TierNormal},
 	}
 	for _, tt := range tests {
 		got := ClassifyEventVerbosity(tt.ns)
@@ -99,14 +99,14 @@ func TestClassifyEventVerbosity_Normal(t *testing.T) {
 func TestClassifyEventVerbosity_Detailed(t *testing.T) {
 	tests := []struct {
 		ns   string
-		want verbosity.VerbosityTier
+		want soothe.VerbosityTier
 	}{
-		{EventThreadStarted, verbosity.TierDetailed},
-		{EventThreadResumed, verbosity.TierDetailed},
-		{EventBrowserStepRunning, verbosity.TierDetailed},
-		{EventBrowserCDPConnecting, verbosity.TierDetailed},
-		{EventClaudeTextRunning, verbosity.TierDetailed},
-		{EventClaudeToolRunning, verbosity.TierDetailed},
+		{EventThreadStarted, soothe.TierDetailed},
+		{EventThreadResumed, soothe.TierDetailed},
+		{EventBrowserStepRunning, soothe.TierDetailed},
+		{EventBrowserCDPConnecting, soothe.TierDetailed},
+		{EventClaudeTextRunning, soothe.TierDetailed},
+		{EventClaudeToolRunning, soothe.TierDetailed},
 	}
 	for _, tt := range tests {
 		got := ClassifyEventVerbosity(tt.ns)
@@ -119,7 +119,7 @@ func TestClassifyEventVerbosity_Detailed(t *testing.T) {
 func TestClassifyEventVerbosity_Internal(t *testing.T) {
 	// Tool events are internal tier
 	got := ClassifyEventVerbosity(EventToolStarted)
-	if got != verbosity.TierInternal {
+	if got != soothe.TierInternal {
 		t.Errorf("tool started should be internal, got %d", got)
 	}
 }

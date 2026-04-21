@@ -1,4 +1,4 @@
-package verbosity
+package soothe
 
 // VerbosityLevel represents the user-configurable verbosity setting.
 type VerbosityLevel string

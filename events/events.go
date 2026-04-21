@@ -1,6 +1,6 @@
 package events
 
-import "github.com/mirasurf/lepton/soothe-client-go/verbosity"
+import "github.com/mirasurf/lepton/soothe-client-go"
 
 // Event namespace constants matching the Soothe daemon wire protocol.
 // Format: soothe.<domain>.<component>.<action>
@@ -97,7 +97,7 @@ func splitNamespace(ns string) []string {
 
 // ClassifyEventVerbosity returns the VerbosityTier for a given event type string.
 // This mirrors soothe_sdk.ux.classification.classify_event_to_tier.
-func ClassifyEventVerbosity(eventTypeOrNamespace string) verbosity.VerbosityTier {
+func ClassifyEventVerbosity(eventTypeOrNamespace string) soothe.VerbosityTier {
 	domain, component, _, ok := ParseNamespace(eventTypeOrNamespace)
 	if !ok {
 		// Try matching on the full string
@@ -106,51 +106,51 @@ func ClassifyEventVerbosity(eventTypeOrNamespace string) verbosity.VerbosityTier
 	return classifyByDomainAndComponent(domain, component, eventTypeOrNamespace)
 }
 
-func classifyByDomainAndComponent(domain, component, full string) verbosity.VerbosityTier {
+func classifyByDomainAndComponent(domain, component, full string) soothe.VerbosityTier {
 	switch domain {
 	case "lifecycle":
-		return verbosity.TierDetailed
+		return soothe.TierDetailed
 	case "protocol":
-		return verbosity.TierDetailed
+		return soothe.TierDetailed
 	case "cognition":
-		return verbosity.TierNormal
+		return soothe.TierNormal
 	case "tool":
-		return verbosity.TierInternal
+		return soothe.TierInternal
 	case "capability":
 		// Capability subagents: progress events -> NORMAL, others -> DETAILED
 		return classifyCapabilityEvent(full)
 	case "output":
-		return verbosity.TierQuiet
+		return soothe.TierQuiet
 	default:
-		return verbosity.TierNormal
+		return soothe.TierNormal
 	}
 }
 
-func classifyCapabilityEvent(full string) verbosity.VerbosityTier {
+func classifyCapabilityEvent(full string) soothe.VerbosityTier {
 	_, _, action, _ := ParseNamespace(full)
 	switch action {
 	case "started", "completed":
-		return verbosity.TierNormal
+		return soothe.TierNormal
 	default:
-		return verbosity.TierDetailed
+		return soothe.TierDetailed
 	}
 }
 
-func classifyByEventTypeString(s string) verbosity.VerbosityTier {
+func classifyByEventTypeString(s string) soothe.VerbosityTier {
 	switch s {
 	case EventChitchatResponse, EventFinalReport, EventThreadError:
-		return verbosity.TierQuiet
+		return soothe.TierQuiet
 	case EventPlanCreated, EventPlanStepStarted, EventPlanStepCompleted,
 		EventAgentLoopStarted, EventAgentLoopIterated,
 		EventBrowserStarted, EventBrowserCompleted,
 		EventClaudeStarted, EventClaudeCompleted,
 		EventResearchStarted, EventResearchCompleted,
 		EventResearchJudgementReporting:
-		return verbosity.TierNormal
+		return soothe.TierNormal
 	case EventAgentLoopCompleted:
-		return verbosity.TierQuiet
+		return soothe.TierQuiet
 	default:
-		return verbosity.TierNormal
+		return soothe.TierNormal
 	}
 }
 
