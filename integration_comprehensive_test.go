@@ -645,42 +645,35 @@ func TestIntegration_ConcurrentClients(t *testing.T) {
 // =============================================================================
 
 func createTestThread(t *testing.T, client *Client, ctx context.Context) string {
-	// Send daemon_ready
-	if err := client.SendDaemonReady(ctx); err != nil {
-		t.Logf("Failed to send daemon_ready: %v", err)
-		return ""
-	}
+	t.Helper()
 
-	// Create new thread
+	// Create new thread (assumes daemon_ready already exchanged)
 	if err := client.SendNewThread(ctx, "/tmp/soothe-test-ws"); err != nil {
 		t.Logf("Failed to send new_thread: %v", err)
 		return ""
 	}
 
-	// Receive messages and wait for status
-	eventCh, err := client.ReceiveMessages(ctx)
-	if err != nil {
-		t.Logf("Failed to receive messages: %v", err)
-		return ""
-	}
-
-	timeout := time.After(10 * time.Second)
-
+	// Use ReadEvent (single-threaded read) to wait for the status response
+	deadline := time.After(10 * time.Second)
 	for {
 		select {
-		case <-timeout:
+		case <-deadline:
 			t.Log("Timeout waiting for thread status")
 			return ""
-		case msg := <-eventCh:
-			if msg == nil {
-				return ""
-			}
-
-			threadID, ok := ExtractSootheThreadID(msg)
-			if ok && threadID != "" {
-				t.Logf("Created test thread: %s", threadID)
-				return threadID
-			}
+		default:
+		}
+		ev, err := client.ReadEvent()
+		if err != nil {
+			t.Logf("ReadEvent error: %v", err)
+			return ""
+		}
+		if ev == nil {
+			continue
+		}
+		threadID, ok := ExtractSootheThreadID(ev)
+		if ok && threadID != "" {
+			t.Logf("Created test thread: %s", threadID)
+			return threadID
 		}
 	}
 }
@@ -696,12 +689,14 @@ func TestIntegration_LongRunningConversation(t *testing.T) {
 	}
 	defer client.Close()
 
-	if _, err := client.WaitForDaemonReady(10 * time.Second); err != nil {
-		t.Fatalf("Daemon not ready: %v", err)
+	// Start receiving messages before bootstrapping so we don't miss the daemon_ready response
+	eventCh, err := client.ReceiveMessages(ctx)
+	if err != nil {
+		t.Fatalf("Failed to start receiving messages: %v", err)
 	}
 
-	// Bootstrap a new thread session
-	threadID, err := BootstrapNewThreadSession(ctx, client, nil, "/tmp/soothe-test-ws", integrationTestConfig())
+	// Bootstrap a new thread session (includes daemon_ready handshake)
+	threadID, err := BootstrapNewThreadSession(ctx, client, eventCh, "/tmp/soothe-test-ws", integrationTestConfig())
 	if err != nil {
 		t.Fatalf("Failed to bootstrap session: %v", err)
 	}

@@ -18,7 +18,8 @@ type Client struct {
 	url    string
 	config *Config
 	conn   *websocket.Conn
-	mu     sync.Mutex // guards conn writes
+	mu     sync.Mutex // guards conn writes and closed flag
+	closed bool
 }
 
 // NewClient creates a new Soothe daemon WebSocket client.
@@ -41,33 +42,49 @@ func (c *Client) Connect(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("soothe dial: %w", err)
 	}
+	c.mu.Lock()
 	c.conn = conn
+	c.closed = false
+	c.mu.Unlock()
 	return nil
 }
 
 // Close shuts down the WebSocket connection.
 func (c *Client) Close() error {
-	if c.conn == nil {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.closed || c.conn == nil {
 		return nil
 	}
-	err := c.conn.WriteMessage(websocket.CloseMessage,
-		websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+	c.closed = true
+	// Use WriteControl to send close frame — it's safe even if a
+	// ReadMessage is in progress (uses its own write buffer).
+	_ = c.conn.WriteControl(websocket.CloseMessage,
+		websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
+		time.Now().Add(time.Second))
 	c.conn.Close()
 	c.conn = nil
-	return err
+	return nil
 }
 
 // IsConnected returns whether the client has an active WebSocket connection.
 func (c *Client) IsConnected() bool {
-	return c.conn != nil
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.conn != nil && !c.closed
 }
 
 // SendMessage serialises msg as JSON and sends it as a WebSocket text frame.
 func (c *Client) SendMessage(ctx context.Context, msg interface{}) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.conn == nil {
+	if c.conn == nil || c.closed {
 		return fmt.Errorf("soothe: not connected")
+	}
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("soothe: %w", ctx.Err())
+	default:
 	}
 	payload, err := json.Marshal(msg)
 	if err != nil {
@@ -80,9 +97,12 @@ func (c *Client) SendMessage(ctx context.Context, msg interface{}) error {
 // messages on the returned channel. The channel is closed when the connection
 // ends or the context is cancelled.
 func (c *Client) ReceiveMessages(ctx context.Context) (<-chan interface{}, error) {
-	if c.conn == nil {
+	c.mu.Lock()
+	if c.conn == nil || c.closed {
+		c.mu.Unlock()
 		return nil, fmt.Errorf("soothe: not connected")
 	}
+	c.mu.Unlock()
 	ch := make(chan interface{}, 100)
 	go func() {
 		defer close(ch)
@@ -92,8 +112,30 @@ func (c *Client) ReceiveMessages(ctx context.Context) (<-chan interface{}, error
 				return
 			default:
 			}
-			_, data, err := c.conn.ReadMessage()
-			if err != nil {
+			// Check if closed before reading.
+			c.mu.Lock()
+			isClosed := c.closed || c.conn == nil
+			c.mu.Unlock()
+			if isClosed {
+				return
+			}
+			// Recover from any bufio panics caused by concurrent Close().
+			var data []byte
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						// Connection was closed during read — exit gracefully.
+						data = nil
+					}
+				}()
+				_, rd, err := c.conn.ReadMessage()
+				if err != nil {
+					data = nil
+					return
+				}
+				data = rd
+			}()
+			if data == nil {
 				return
 			}
 			for _, frame := range SplitSootheWirePayload(data) {
