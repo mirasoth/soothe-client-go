@@ -5,41 +5,86 @@ package soothe
 
 // Plan events
 const (
-	EventPlanCreated      = "soothe.cognition.plan.created"
-	EventPlanStepStarted  = "soothe.cognition.plan.step.started"
+	EventPlanCreated       = "soothe.cognition.plan.created"
+	EventPlanStepStarted   = "soothe.cognition.plan.step.started"
 	EventPlanStepCompleted = "soothe.cognition.plan.step.completed"
+	EventPlanStepFailed    = "soothe.cognition.plan.step.failed"
+	EventPlanBatchStarted  = "soothe.cognition.plan.batch.started"
+	EventPlanReflected     = "soothe.cognition.plan.reflected"
+	EventPlanDagSnapshot   = "soothe.cognition.plan.dag_snapshot"
+)
+
+// Goal events
+const (
+	EventGoalCreated           = "soothe.cognition.goal.created"
+	EventGoalCompleted         = "soothe.cognition.goal.completed"
+	EventGoalFailed            = "soothe.cognition.goal.failed"
+	EventGoalDeferred          = "soothe.cognition.goal.deferred"
+	EventGoalBatchStarted      = "soothe.cognition.goal.batch.started"
+	EventGoalReported          = "soothe.cognition.goal.reported"
+	EventGoalDirectivesApplied = "soothe.cognition.goal.directives.applied"
 )
 
 // Browser subagent events
 const (
-	EventBrowserStarted     = "soothe.capability.browser.started"
-	EventBrowserCompleted   = "soothe.capability.browser.completed"
-	EventBrowserStepRunning = "soothe.capability.browser.step.running"
+	EventBrowserStarted       = "soothe.capability.browser.started"
+	EventBrowserCompleted     = "soothe.capability.browser.completed"
+	EventBrowserStepRunning   = "soothe.capability.browser.step.running"
 	EventBrowserCDPConnecting = "soothe.capability.browser.cdp.connecting"
 )
 
 // Claude subagent events
 const (
-	EventClaudeStarted      = "soothe.capability.claude.started"
-	EventClaudeTextRunning  = "soothe.capability.claude.text.running"
-	EventClaudeToolRunning  = "soothe.capability.claude.tool.running"
-	EventClaudeCompleted    = "soothe.capability.claude.completed"
+	EventClaudeStarted     = "soothe.capability.claude.started"
+	EventClaudeTextRunning = "soothe.capability.claude.text.running"
+	EventClaudeToolRunning = "soothe.capability.claude.tool.running"
+	EventClaudeCompleted   = "soothe.capability.claude.completed"
 )
 
 // Research subagent events
 const (
-	EventResearchStarted           = "soothe.capability.research.started"
-	EventResearchCompleted         = "soothe.capability.research.completed"
+	EventResearchStarted            = "soothe.capability.research.started"
+	EventResearchCompleted          = "soothe.capability.research.completed"
 	EventResearchJudgementReporting = "soothe.capability.research.judgement.reporting"
-	EventResearchInternalLLM       = "soothe.capability.research.internal_llm.run"
+	EventResearchInternalLLM        = "soothe.capability.research.internal_llm.run"
 )
 
 // Thread lifecycle events
 const (
 	EventThreadStarted   = "soothe.lifecycle.thread.started"
 	EventThreadResumed   = "soothe.lifecycle.thread.resumed"
+	EventThreadSaved     = "soothe.lifecycle.thread.saved"
+	EventThreadEnded     = "soothe.lifecycle.thread.ended"
+	EventThreadSwitched  = "soothe.lifecycle.thread.switched"
 	EventThreadCompleted = "soothe.lifecycle.thread.completed"
 	EventThreadError     = "soothe.lifecycle.thread.error"
+)
+
+// Iteration lifecycle events
+const (
+	EventIterationStarted   = "soothe.lifecycle.iteration.started"
+	EventIterationCompleted = "soothe.lifecycle.iteration.completed"
+)
+
+// Checkpoint lifecycle events
+const (
+	EventCheckpointSaved         = "soothe.lifecycle.checkpoint.saved"
+	EventCheckpointAnchorCreated = "soothe.lifecycle.checkpoint.anchor.created"
+)
+
+// Recovery lifecycle events
+const (
+	EventRecoveryResumed = "soothe.lifecycle.recovery.resumed"
+)
+
+// Loop lifecycle events
+const (
+	EventLoopCreated         = "soothe.lifecycle.loop.created"
+	EventLoopStarted         = "soothe.lifecycle.loop.started"
+	EventLoopDetached        = "soothe.lifecycle.loop.detached"
+	EventLoopReattached      = "soothe.lifecycle.loop.reattached"
+	EventLoopCompleted       = "soothe.lifecycle.loop.completed"
+	EventLoopHistoryReplayed = "soothe.lifecycle.loop.history.replayed"
 )
 
 // Tool events
@@ -51,9 +96,19 @@ const (
 
 // Agent loop events
 const (
-	EventAgentLoopStarted   = "soothe.cognition.agent_loop.started"
-	EventAgentLoopIterated  = "soothe.cognition.agent_loop.iterated"
-	EventAgentLoopCompleted = "soothe.cognition.agent_loop.completed"
+	EventAgentLoopStarted       = "soothe.cognition.agent_loop.started"
+	EventAgentLoopIterated      = "soothe.cognition.agent_loop.iterated"
+	EventAgentLoopCompleted     = "soothe.cognition.agent_loop.completed"
+	EventAgentLoopStepStarted   = "soothe.cognition.agent_loop.step.started"
+	EventAgentLoopStepCompleted = "soothe.cognition.agent_loop.step.completed"
+)
+
+// Branch (retry) events
+const (
+	EventBranchCreated      = "soothe.cognition.branch.created"
+	EventBranchAnalyzed     = "soothe.cognition.branch.analyzed"
+	EventBranchRetryStarted = "soothe.cognition.branch.retry.started"
+	EventBranchPruned       = "soothe.cognition.branch.pruned"
 )
 
 // Message protocol events
@@ -62,10 +117,40 @@ const (
 	EventMessageSent     = "soothe.protocol.message.sent"
 )
 
+// Memory protocol events
+const (
+	EventMemoryRecalled = "soothe.protocol.memory.recalled"
+	EventMemoryStored   = "soothe.protocol.memory.stored"
+)
+
+// Policy protocol events
+const (
+	EventPolicyChecked = "soothe.protocol.policy.checked"
+	EventPolicyDenied  = "soothe.protocol.policy.denied"
+)
+
 // Output events
 const (
+	EventChitchatStarted  = "soothe.output.chitchat.started"
 	EventChitchatResponse = "soothe.output.chitchat.responded"
 	EventFinalReport      = "soothe.output.autonomous.final_report.reported"
+)
+
+// System events
+const (
+	EventDaemonHeartbeat = "soothe.system.daemon.heartbeat"
+)
+
+// Plugin events
+const (
+	EventPluginLoaded   = "soothe.plugin.loaded"
+	EventPluginFailed   = "soothe.plugin.failed"
+	EventPluginUnloaded = "soothe.plugin.unloaded"
+)
+
+// Error events
+const (
+	EventGeneralFailed = "soothe.error.general.failed"
 )
 
 // ParseNamespace splits a 4-segment event namespace into its components.
@@ -107,11 +192,11 @@ func ClassifyEventVerbosity(eventTypeOrNamespace string) VerbosityTier {
 func classifyByDomainAndComponent(domain, component, full string) VerbosityTier {
 	switch domain {
 	case "lifecycle":
-		return TierDetailed
+		return classifyLifecycleEvent(full)
 	case "protocol":
 		return TierDetailed
 	case "cognition":
-		return TierNormal
+		return classifyCognitionEvent(full)
 	case "tool":
 		return TierInternal
 	case "capability":
@@ -119,6 +204,36 @@ func classifyByDomainAndComponent(domain, component, full string) VerbosityTier 
 		return classifyCapabilityEvent(full)
 	case "output":
 		return TierQuiet
+	case "system":
+		return TierDebug
+	case "plugin":
+		return TierDetailed
+	case "error":
+		return TierQuiet
+	default:
+		return TierNormal
+	}
+}
+
+func classifyLifecycleEvent(full string) VerbosityTier {
+	_, _, action, _ := ParseNamespace(full)
+	switch action {
+	case "completed", "ended", "error":
+		return TierQuiet
+	case "started", "switched":
+		return TierNormal
+	default:
+		return TierDetailed
+	}
+}
+
+func classifyCognitionEvent(full string) VerbosityTier {
+	_, component, _, _ := ParseNamespace(full)
+	switch component {
+	case "plan", "goal", "agent_loop":
+		return TierNormal
+	case "branch":
+		return TierDetailed
 	default:
 		return TierNormal
 	}
@@ -136,17 +251,36 @@ func classifyCapabilityEvent(full string) VerbosityTier {
 
 func classifyByEventTypeString(s string) VerbosityTier {
 	switch s {
-	case EventChitchatResponse, EventFinalReport, EventThreadError:
+	case EventChitchatResponse, EventFinalReport, EventThreadError,
+		EventGeneralFailed, EventGoalFailed, EventPlanStepFailed:
 		return TierQuiet
 	case EventPlanCreated, EventPlanStepStarted, EventPlanStepCompleted,
+		EventPlanBatchStarted, EventPlanReflected, EventPlanDagSnapshot,
+		EventGoalCreated, EventGoalCompleted, EventGoalDeferred,
+		EventGoalBatchStarted, EventGoalReported, EventGoalDirectivesApplied,
 		EventAgentLoopStarted, EventAgentLoopIterated,
+		EventAgentLoopStepStarted, EventAgentLoopStepCompleted,
 		EventBrowserStarted, EventBrowserCompleted,
 		EventClaudeStarted, EventClaudeCompleted,
 		EventResearchStarted, EventResearchCompleted,
-		EventResearchJudgementReporting:
+		EventResearchJudgementReporting,
+		EventThreadStarted, EventThreadResumed, EventThreadEnded,
+		EventThreadSwitched, EventThreadSaved:
 		return TierNormal
 	case EventAgentLoopCompleted:
 		return TierQuiet
+	case EventIterationStarted, EventIterationCompleted,
+		EventCheckpointSaved, EventCheckpointAnchorCreated,
+		EventRecoveryResumed, EventBranchCreated, EventBranchAnalyzed,
+		EventBranchRetryStarted, EventBranchPruned,
+		EventMemoryRecalled, EventMemoryStored,
+		EventPolicyChecked, EventPolicyDenied,
+		EventLoopCreated, EventLoopStarted, EventLoopDetached,
+		EventLoopReattached, EventLoopCompleted, EventLoopHistoryReplayed,
+		EventPluginLoaded, EventPluginFailed, EventPluginUnloaded:
+		return TierDetailed
+	case EventDaemonHeartbeat:
+		return TierDebug
 	default:
 		return TierNormal
 	}
@@ -158,7 +292,7 @@ func IsCompletionEvent(namespace string) bool {
 	if !ok {
 		return false
 	}
-	return action == "completed" || namespace == EventThreadCompleted
+	return action == "completed" || namespace == EventThreadCompleted || namespace == EventThreadEnded
 }
 
 // IsSubagentProgressEvent checks if an event is a subagent progress event.
@@ -176,21 +310,26 @@ func IsSubagentProgressEvent(namespace string) bool {
 
 // EssentialEventTypes are always processed regardless of verbosity.
 var EssentialEventTypes = map[string]bool{
-	EventThreadCompleted:    true,
-	EventThreadError:        true,
-	EventChitchatResponse:   true,
-	EventFinalReport:        true,
-	EventPlanCreated:        true,
-	EventPlanStepStarted:    true,
-	EventPlanStepCompleted:  true,
-	EventAgentLoopStarted:   true,
-	EventAgentLoopIterated:  true,
-	EventAgentLoopCompleted: true,
-	EventBrowserStarted:     true,
-	EventBrowserCompleted:   true,
-	EventClaudeStarted:      true,
-	EventClaudeCompleted:    true,
-	EventResearchStarted:    true,
-	EventResearchCompleted:  true,
+	EventThreadCompleted:            true,
+	EventThreadEnded:                true,
+	EventThreadError:                true,
+	EventChitchatResponse:           true,
+	EventFinalReport:                true,
+	EventPlanCreated:                true,
+	EventPlanStepStarted:            true,
+	EventPlanStepCompleted:          true,
+	EventPlanStepFailed:             true,
+	EventGoalCreated:                true,
+	EventGoalCompleted:              true,
+	EventGoalFailed:                 true,
+	EventAgentLoopStarted:           true,
+	EventAgentLoopIterated:          true,
+	EventAgentLoopCompleted:         true,
+	EventBrowserStarted:             true,
+	EventBrowserCompleted:           true,
+	EventClaudeStarted:              true,
+	EventClaudeCompleted:            true,
+	EventResearchStarted:            true,
+	EventResearchCompleted:          true,
 	EventResearchJudgementReporting: true,
 }

@@ -45,7 +45,7 @@ func TestIntegration_ThreadCreate(t *testing.T) {
 	// Create a persisted thread
 	requestID := NewRequestID()
 	if err := client.SendThreadCreate(ctx, "Initial test message", map[string]interface{}{
-		"test": true,
+		"test":       true,
 		"created_by": "integration_test",
 	}, requestID); err != nil {
 		t.Fatalf("Failed to send thread_create: %v", err)
@@ -480,11 +480,11 @@ func TestIntegration_EventClassification(t *testing.T) {
 
 	// Test event classification with verbosity
 	testEvents := []struct {
-		eventType string
+		eventType    string
 		expectedTier VerbosityTier
 	}{
 		{EventPlanCreated, TierNormal},
-		{EventThreadCompleted, TierDetailed},
+		{EventThreadCompleted, TierQuiet},
 		{EventChitchatResponse, TierQuiet},
 		{EventBrowserStarted, TierNormal},
 		{EventToolStarted, TierInternal},
@@ -758,7 +758,7 @@ func TestIntegration_SubscribeMultipleThreads(t *testing.T) {
 			continue
 		}
 
-		verbosity := verbosities[i % len(verbosities)]
+		verbosity := verbosities[i%len(verbosities)]
 		if err := client.SendSubscribeThread(ctx, threadID, verbosity); err != nil {
 			t.Errorf("Failed to subscribe to thread %s: %v", threadID, err)
 		}

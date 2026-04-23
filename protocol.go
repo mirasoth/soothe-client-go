@@ -43,6 +43,14 @@ type CommandMessage struct {
 	Cmd string `json:"cmd"`
 }
 
+// CommandRequestMessage represents a structured RPC command (RFC-404).
+type CommandRequestMessage struct {
+	BaseMessage
+	Command  string                 `json:"command"`
+	ThreadID string                 `json:"thread_id,omitempty"`
+	Params   map[string]interface{} `json:"params,omitempty"`
+}
+
 // SubscribeThreadMessage represents a thread subscription request.
 type SubscribeThreadMessage struct {
 	BaseMessage
@@ -82,9 +90,9 @@ type ConfigGetMessage struct {
 // ThreadListMessage requests the persisted thread list.
 type ThreadListMessage struct {
 	BaseMessage
-	Filter            map[string]interface{} `json:"filter,omitempty"`
-	IncludeStats      bool                   `json:"include_stats,omitempty"`
-	IncludeLastMessage bool                  `json:"include_last_message,omitempty"`
+	Filter             map[string]interface{} `json:"filter,omitempty"`
+	IncludeStats       bool                   `json:"include_stats,omitempty"`
+	IncludeLastMessage bool                   `json:"include_last_message,omitempty"`
 }
 
 // ThreadGetMessage requests metadata for a specific thread.
@@ -96,9 +104,10 @@ type ThreadGetMessage struct {
 // ThreadMessagesMessage requests paginated thread messages.
 type ThreadMessagesMessage struct {
 	BaseMessage
-	ThreadID string `json:"thread_id"`
-	Limit    int    `json:"limit,omitempty"`
-	Offset   int    `json:"offset,omitempty"`
+	ThreadID      string `json:"thread_id"`
+	Limit         int    `json:"limit,omitempty"`
+	Offset        int    `json:"offset,omitempty"`
+	IncludeEvents bool   `json:"include_events,omitempty"`
 }
 
 // ThreadStateMessage requests raw checkpoint state for a thread.
@@ -110,7 +119,7 @@ type ThreadStateMessage struct {
 // ThreadUpdateStateMessage persists partial state values for a thread.
 type ThreadUpdateStateMessage struct {
 	BaseMessage
-	ThreadID string               `json:"thread_id"`
+	ThreadID string                 `json:"thread_id"`
 	Values   map[string]interface{} `json:"values"`
 }
 
@@ -142,8 +151,8 @@ type ThreadArtifactsMessage struct {
 // ResumeInterruptsMessage sends interactive continuation payload.
 type ResumeInterruptsMessage struct {
 	BaseMessage
-	ThreadID       string                 `json:"thread_id"`
-	ResumePayload  map[string]interface{} `json:"resume_payload"`
+	ThreadID      string                 `json:"thread_id"`
+	ResumePayload map[string]interface{} `json:"resume_payload"`
 }
 
 // SkillsListMessage requests the skills catalog (RFC-400).
@@ -166,6 +175,77 @@ type InvokeSkillMessage struct {
 // DetachMessage notifies the daemon that the client is detaching.
 type DetachMessage struct {
 	BaseMessage
+}
+
+// ThreadStatusMessage requests thread runtime status.
+type ThreadStatusMessage struct {
+	BaseMessage
+	ThreadID string `json:"thread_id"`
+}
+
+// LoopListMessage requests the list of AgentLoop instances.
+type LoopListMessage struct {
+	BaseMessage
+	Filter map[string]interface{} `json:"filter,omitempty"`
+	Limit  int                    `json:"limit,omitempty"`
+}
+
+// LoopGetMessage requests details for a specific loop.
+type LoopGetMessage struct {
+	BaseMessage
+	LoopID  string `json:"loop_id"`
+	Verbose bool   `json:"verbose,omitempty"`
+}
+
+// LoopTreeMessage requests the checkpoint tree for a loop.
+type LoopTreeMessage struct {
+	BaseMessage
+	LoopID string `json:"loop_id"`
+	Format string `json:"format,omitempty"`
+}
+
+// LoopPruneMessage requests pruning of old branches for a loop.
+type LoopPruneMessage struct {
+	BaseMessage
+	LoopID        string `json:"loop_id"`
+	RetentionDays int    `json:"retention_days,omitempty"`
+	DryRun        bool   `json:"dry_run,omitempty"`
+}
+
+// LoopDeleteMessage requests deletion of a loop.
+type LoopDeleteMessage struct {
+	BaseMessage
+	LoopID string `json:"loop_id"`
+}
+
+// LoopReattachMessage requests reattachment to a loop (RFC-411).
+type LoopReattachMessage struct {
+	BaseMessage
+	LoopID string `json:"loop_id"`
+}
+
+// LoopSubscribeMessage subscribes to loop events (RFC-503).
+type LoopSubscribeMessage struct {
+	BaseMessage
+	LoopID string `json:"loop_id"`
+}
+
+// LoopDetachMessage detaches from a loop (RFC-503).
+type LoopDetachMessage struct {
+	BaseMessage
+	LoopID string `json:"loop_id"`
+}
+
+// LoopNewMessage creates a new loop (RFC-503).
+type LoopNewMessage struct {
+	BaseMessage
+}
+
+// LoopInputMessage sends input to a loop (RFC-503).
+type LoopInputMessage struct {
+	BaseMessage
+	LoopID  string                 `json:"loop_id"`
+	Content map[string]interface{} `json:"content"`
 }
 
 // ---------------------------------------------------------------------------
@@ -204,8 +284,9 @@ type SubscriptionConfirmedResponse struct {
 // ErrorResponse represents an error message from the daemon.
 type ErrorResponse struct {
 	BaseMessage
-	Code    string `json:"code"`
-	Message string `json:"message"`
+	Code    string                 `json:"code"`
+	Message string                 `json:"message"`
+	Details map[string]interface{} `json:"details,omitempty"`
 }
 
 // DaemonReadyResponse represents daemon readiness.
@@ -218,9 +299,10 @@ type DaemonReadyResponse struct {
 // DaemonStatusResponse represents the daemon status response.
 type DaemonStatusResponse struct {
 	BaseMessage
-	Running        bool `json:"running"`
-	PortLive       bool `json:"port_live"`
-	ActiveThreads  int  `json:"active_threads"`
+	Running       bool `json:"running"`
+	PortLive      bool `json:"port_live"`
+	ActiveThreads int  `json:"active_threads"`
+	DaemonPID     int  `json:"daemon_pid,omitempty"`
 }
 
 // ShutdownAckResponse represents the daemon shutdown acknowledgment.
@@ -239,6 +321,7 @@ type ConfigGetResponse struct {
 type ThreadListResponse struct {
 	BaseMessage
 	Threads []map[string]interface{} `json:"threads,omitempty"`
+	Total   int                      `json:"total,omitempty"`
 }
 
 // SkillsListResponse represents the skills list response.
@@ -256,7 +339,148 @@ type ModelsListResponse struct {
 // InvokeSkillResponse represents the skill invocation response.
 type InvokeSkillResponse struct {
 	BaseMessage
-	// Skill response data varies; stored in extra fields.
+	Echo map[string]interface{} `json:"echo,omitempty"`
+}
+
+// CommandResponseMessage represents an RPC command response (RFC-404).
+type CommandResponseMessage struct {
+	BaseMessage
+	Command string                 `json:"command"`
+	Data    map[string]interface{} `json:"data,omitempty"`
+	Error   string                 `json:"error,omitempty"`
+}
+
+// ClearMessage represents a thread cleared notification.
+type ClearMessage struct {
+	BaseMessage
+	ThreadID string `json:"thread_id"`
+}
+
+// ThreadCreatedMessage represents a thread creation result.
+type ThreadCreatedMessage struct {
+	BaseMessage
+	ThreadID string `json:"thread_id"`
+	Status   string `json:"status"`
+}
+
+// ThreadGetResponse represents a thread get result.
+type ThreadGetResponse struct {
+	BaseMessage
+	Thread map[string]interface{} `json:"thread"`
+}
+
+// ThreadOperationAckResponse represents thread archive/delete acknowledgment.
+type ThreadOperationAckResponse struct {
+	BaseMessage
+	Operation string `json:"operation"`
+	ThreadID  string `json:"thread_id"`
+	Success   bool   `json:"success"`
+}
+
+// ThreadMessagesResponse represents thread messages result.
+type ThreadMessagesResponse struct {
+	BaseMessage
+	ThreadID string                   `json:"thread_id"`
+	Messages []map[string]interface{} `json:"messages,omitempty"`
+	Limit    int                      `json:"limit,omitempty"`
+	Offset   int                      `json:"offset,omitempty"`
+}
+
+// ThreadArtifactsResponse represents thread artifacts result.
+type ThreadArtifactsResponse struct {
+	BaseMessage
+	ThreadID  string                   `json:"thread_id"`
+	Artifacts []map[string]interface{} `json:"artifacts,omitempty"`
+}
+
+// ThreadStatusResponse represents thread runtime status.
+type ThreadStatusResponse struct {
+	BaseMessage
+	ThreadID       string `json:"thread_id"`
+	State          string `json:"state"`
+	HasActiveQuery bool   `json:"has_active_query"`
+}
+
+// ThreadStateResponse represents raw checkpoint state.
+type ThreadStateResponse struct {
+	BaseMessage
+	ThreadID string                 `json:"thread_id"`
+	Values   map[string]interface{} `json:"values"`
+}
+
+// ThreadUpdateStateResponse represents state update acknowledgment.
+type ThreadUpdateStateResponse struct {
+	BaseMessage
+	ThreadID string `json:"thread_id"`
+	Success  bool   `json:"success"`
+}
+
+// InterruptsResumedMessage represents interrupt resume acknowledgment.
+type InterruptsResumedMessage struct {
+	BaseMessage
+	ThreadID string `json:"thread_id"`
+	Success  bool   `json:"success"`
+}
+
+// LoopListResponse represents the loop list response.
+type LoopListResponse struct {
+	BaseMessage
+	Loops []map[string]interface{} `json:"loops,omitempty"`
+	Total int                      `json:"total,omitempty"`
+}
+
+// LoopGetResponse represents loop details response.
+type LoopGetResponse struct {
+	BaseMessage
+	Loop map[string]interface{} `json:"loop"`
+}
+
+// LoopTreeResponse represents checkpoint tree response.
+type LoopTreeResponse struct {
+	BaseMessage
+	Tree map[string]interface{} `json:"tree"`
+}
+
+// LoopPruneResponse represents prune result response.
+type LoopPruneResponse struct {
+	BaseMessage
+	Result map[string]interface{} `json:"result"`
+}
+
+// LoopDeleteResponse represents loop delete response.
+type LoopDeleteResponse struct {
+	BaseMessage
+	Success bool   `json:"success"`
+	Message string `json:"message,omitempty"`
+}
+
+// LoopSubscribeResponse represents loop subscription result.
+type LoopSubscribeResponse struct {
+	BaseMessage
+	LoopID  string `json:"loop_id"`
+	Success bool   `json:"success"`
+}
+
+// LoopDetachResponse represents loop detach result.
+type LoopDetachResponse struct {
+	BaseMessage
+	LoopID  string `json:"loop_id"`
+	Success bool   `json:"success"`
+}
+
+// LoopNewResponse represents new loop creation result.
+type LoopNewResponse struct {
+	BaseMessage
+	LoopID  string `json:"loop_id"`
+	Success bool   `json:"success"`
+}
+
+// LoopInputResponse represents loop input result.
+type LoopInputResponse struct {
+	BaseMessage
+	LoopID   string `json:"loop_id"`
+	ThreadID string `json:"thread_id,omitempty"`
+	Success  bool   `json:"success"`
 }
 
 // ---------------------------------------------------------------------------
@@ -439,6 +663,90 @@ func DecodeMessage(data []byte) (interface{}, error) {
 		}
 		return msg, nil
 
+	case "command_request":
+		var msg CommandRequestMessage
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "thread_status":
+		var msg ThreadStatusMessage
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_list":
+		var msg LoopListMessage
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_get":
+		var msg LoopGetMessage
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_tree":
+		var msg LoopTreeMessage
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_prune":
+		var msg LoopPruneMessage
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_delete":
+		var msg LoopDeleteMessage
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_reattach":
+		var msg LoopReattachMessage
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_subscribe":
+		var msg LoopSubscribeMessage
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_detach":
+		var msg LoopDetachMessage
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_new":
+		var msg LoopNewMessage
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_input":
+		var msg LoopInputMessage
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
 	// Daemon → Client message types
 	case "event":
 		var msg EventMessage
@@ -527,7 +835,147 @@ func DecodeMessage(data []byte) (interface{}, error) {
 		return msg, nil
 
 	case "invoke_skill_response":
-		var msg map[string]interface{}
+		var msg InvokeSkillResponse
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "command_response":
+		var msg CommandResponseMessage
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "clear":
+		var msg ClearMessage
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "thread_created":
+		var msg ThreadCreatedMessage
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "thread_get_response":
+		var msg ThreadGetResponse
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "thread_operation_ack":
+		var msg ThreadOperationAckResponse
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "thread_messages_response":
+		var msg ThreadMessagesResponse
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "thread_artifacts_response":
+		var msg ThreadArtifactsResponse
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "thread_status_response":
+		var msg ThreadStatusResponse
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "thread_state_response":
+		var msg ThreadStateResponse
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "thread_update_state_response":
+		var msg ThreadUpdateStateResponse
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "interrupts_resumed":
+		var msg InterruptsResumedMessage
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_list_response":
+		var msg LoopListResponse
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_get_response":
+		var msg LoopGetResponse
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_tree_response":
+		var msg LoopTreeResponse
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_prune_response":
+		var msg LoopPruneResponse
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_delete_response":
+		var msg LoopDeleteResponse
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_subscribe_response":
+		var msg LoopSubscribeResponse
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_detach_response":
+		var msg LoopDetachResponse
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_new_response":
+		var msg LoopNewResponse
+		if err := json.Unmarshal(data, &msg); err != nil {
+			return nil, err
+		}
+		return msg, nil
+
+	case "loop_input_response":
+		var msg LoopInputResponse
 		if err := json.Unmarshal(data, &msg); err != nil {
 			return nil, err
 		}
@@ -561,6 +1009,42 @@ func ExtractSootheThreadID(msg interface{}) (string, bool) {
 			if s, ok := m.Data["threadId"].(string); ok && s != "" {
 				return s, true
 			}
+		}
+	case ThreadCreatedMessage:
+		if m.ThreadID != "" {
+			return m.ThreadID, true
+		}
+	case ClearMessage:
+		if m.ThreadID != "" {
+			return m.ThreadID, true
+		}
+	case ThreadStatusResponse:
+		if m.ThreadID != "" {
+			return m.ThreadID, true
+		}
+	case ThreadMessagesResponse:
+		if m.ThreadID != "" {
+			return m.ThreadID, true
+		}
+	case ThreadArtifactsResponse:
+		if m.ThreadID != "" {
+			return m.ThreadID, true
+		}
+	case ThreadStateResponse:
+		if m.ThreadID != "" {
+			return m.ThreadID, true
+		}
+	case ThreadUpdateStateResponse:
+		if m.ThreadID != "" {
+			return m.ThreadID, true
+		}
+	case InterruptsResumedMessage:
+		if m.ThreadID != "" {
+			return m.ThreadID, true
+		}
+	case LoopInputResponse:
+		if m.ThreadID != "" {
+			return m.ThreadID, true
 		}
 	case map[string]interface{}:
 		if s, ok := m["thread_id"].(string); ok && s != "" {

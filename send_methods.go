@@ -13,9 +13,9 @@ func (c *Client) SendInput(ctx context.Context, text string, opts ...InputOption
 		opt(o)
 	}
 	payload := map[string]interface{}{
-		"type":        "input",
-		"text":        text,
-		"autonomous":  o.autonomous,
+		"type":       "input",
+		"text":       text,
+		"autonomous": o.autonomous,
 	}
 	if o.maxIterations != nil {
 		payload["max_iterations"] = *o.maxIterations
@@ -271,9 +271,9 @@ func (c *Client) SendThreadCreate(ctx context.Context, initialMessage string, me
 		rid = NewRequestID()
 	}
 	return c.SendMessage(ctx, ThreadCreateMessage{
-		BaseMessage:     BaseMessage{RequestID: rid, Type: "thread_create"},
-		InitialMessage:  initialMessage,
-		Metadata:        metadata,
+		BaseMessage:    BaseMessage{RequestID: rid, Type: "thread_create"},
+		InitialMessage: initialMessage,
+		Metadata:       metadata,
 	})
 }
 
@@ -300,9 +300,9 @@ func (c *Client) SendResumeInterrupts(ctx context.Context, threadID string, resu
 		rid = NewRequestID()
 	}
 	return c.SendMessage(ctx, ResumeInterruptsMessage{
-		BaseMessage:    BaseMessage{RequestID: rid, Type: "resume_interrupts"},
-		ThreadID:       threadID,
-		ResumePayload:  resumePayload,
+		BaseMessage:   BaseMessage{RequestID: rid, Type: "resume_interrupts"},
+		ThreadID:      threadID,
+		ResumePayload: resumePayload,
 	})
 }
 
@@ -344,5 +344,180 @@ func (c *Client) SendInvokeSkill(ctx context.Context, skill, args string, reques
 		BaseMessage: BaseMessage{RequestID: rid, Type: "invoke_skill"},
 		Skill:       skill,
 		Args:        args,
+	})
+}
+
+// SendCommandRequest sends a structured RPC command (RFC-404).
+func (c *Client) SendCommandRequest(ctx context.Context, command string, threadID string, params map[string]interface{}, requestID ...string) error {
+	rid := ""
+	if len(requestID) > 0 {
+		rid = requestID[0]
+	} else {
+		rid = NewRequestID()
+	}
+	return c.SendMessage(ctx, CommandRequestMessage{
+		BaseMessage: BaseMessage{RequestID: rid, Type: "command_request"},
+		Command:     command,
+		ThreadID:    threadID,
+		Params:      params,
+	})
+}
+
+// SendThreadStatus requests runtime status for a thread.
+func (c *Client) SendThreadStatus(ctx context.Context, threadID string, requestID ...string) error {
+	rid := ""
+	if len(requestID) > 0 {
+		rid = requestID[0]
+	} else {
+		rid = NewRequestID()
+	}
+	return c.SendMessage(ctx, ThreadStatusMessage{
+		BaseMessage: BaseMessage{RequestID: rid, Type: "thread_status"},
+		ThreadID:    threadID,
+	})
+}
+
+// SendLoopList requests the list of AgentLoop instances.
+func (c *Client) SendLoopList(ctx context.Context, filter map[string]interface{}, limit int, requestID ...string) error {
+	rid := ""
+	if len(requestID) > 0 {
+		rid = requestID[0]
+	} else {
+		rid = NewRequestID()
+	}
+	return c.SendMessage(ctx, LoopListMessage{
+		BaseMessage: BaseMessage{RequestID: rid, Type: "loop_list"},
+		Filter:      filter,
+		Limit:       limit,
+	})
+}
+
+// SendLoopGet requests details for a specific loop.
+func (c *Client) SendLoopGet(ctx context.Context, loopID string, verbose bool, requestID ...string) error {
+	rid := ""
+	if len(requestID) > 0 {
+		rid = requestID[0]
+	} else {
+		rid = NewRequestID()
+	}
+	return c.SendMessage(ctx, LoopGetMessage{
+		BaseMessage: BaseMessage{RequestID: rid, Type: "loop_get"},
+		LoopID:      loopID,
+		Verbose:     verbose,
+	})
+}
+
+// SendLoopTree requests the checkpoint tree for a loop.
+func (c *Client) SendLoopTree(ctx context.Context, loopID, format string, requestID ...string) error {
+	rid := ""
+	if len(requestID) > 0 {
+		rid = requestID[0]
+	} else {
+		rid = NewRequestID()
+	}
+	return c.SendMessage(ctx, LoopTreeMessage{
+		BaseMessage: BaseMessage{RequestID: rid, Type: "loop_tree"},
+		LoopID:      loopID,
+		Format:      format,
+	})
+}
+
+// SendLoopPrune requests pruning of old branches for a loop.
+func (c *Client) SendLoopPrune(ctx context.Context, loopID string, retentionDays int, dryRun bool, requestID ...string) error {
+	rid := ""
+	if len(requestID) > 0 {
+		rid = requestID[0]
+	} else {
+		rid = NewRequestID()
+	}
+	return c.SendMessage(ctx, LoopPruneMessage{
+		BaseMessage:   BaseMessage{RequestID: rid, Type: "loop_prune"},
+		LoopID:        loopID,
+		RetentionDays: retentionDays,
+		DryRun:        dryRun,
+	})
+}
+
+// SendLoopDelete requests deletion of a loop.
+func (c *Client) SendLoopDelete(ctx context.Context, loopID string, requestID ...string) error {
+	rid := ""
+	if len(requestID) > 0 {
+		rid = requestID[0]
+	} else {
+		rid = NewRequestID()
+	}
+	return c.SendMessage(ctx, LoopDeleteMessage{
+		BaseMessage: BaseMessage{RequestID: rid, Type: "loop_delete"},
+		LoopID:      loopID,
+	})
+}
+
+// SendLoopReattach requests reattachment to a loop (RFC-411).
+func (c *Client) SendLoopReattach(ctx context.Context, loopID string, requestID ...string) error {
+	rid := ""
+	if len(requestID) > 0 {
+		rid = requestID[0]
+	} else {
+		rid = NewRequestID()
+	}
+	return c.SendMessage(ctx, LoopReattachMessage{
+		BaseMessage: BaseMessage{RequestID: rid, Type: "loop_reattach"},
+		LoopID:      loopID,
+	})
+}
+
+// SendLoopSubscribe subscribes to loop events (RFC-503).
+func (c *Client) SendLoopSubscribe(ctx context.Context, loopID string, requestID ...string) error {
+	rid := ""
+	if len(requestID) > 0 {
+		rid = requestID[0]
+	} else {
+		rid = NewRequestID()
+	}
+	return c.SendMessage(ctx, LoopSubscribeMessage{
+		BaseMessage: BaseMessage{RequestID: rid, Type: "loop_subscribe"},
+		LoopID:      loopID,
+	})
+}
+
+// SendLoopDetach detaches from a loop (RFC-503).
+func (c *Client) SendLoopDetach(ctx context.Context, loopID string, requestID ...string) error {
+	rid := ""
+	if len(requestID) > 0 {
+		rid = requestID[0]
+	} else {
+		rid = NewRequestID()
+	}
+	return c.SendMessage(ctx, LoopDetachMessage{
+		BaseMessage: BaseMessage{RequestID: rid, Type: "loop_detach"},
+		LoopID:      loopID,
+	})
+}
+
+// SendLoopNew creates a new loop (RFC-503).
+func (c *Client) SendLoopNew(ctx context.Context, requestID ...string) error {
+	rid := ""
+	if len(requestID) > 0 {
+		rid = requestID[0]
+	} else {
+		rid = NewRequestID()
+	}
+	return c.SendMessage(ctx, LoopNewMessage{
+		BaseMessage: BaseMessage{RequestID: rid, Type: "loop_new"},
+	})
+}
+
+// SendLoopInput sends input to a loop (RFC-503).
+func (c *Client) SendLoopInput(ctx context.Context, loopID string, content map[string]interface{}, requestID ...string) error {
+	rid := ""
+	if len(requestID) > 0 {
+		rid = requestID[0]
+	} else {
+		rid = NewRequestID()
+	}
+	return c.SendMessage(ctx, LoopInputMessage{
+		BaseMessage: BaseMessage{RequestID: rid, Type: "loop_input"},
+		LoopID:      loopID,
+		Content:     content,
 	})
 }

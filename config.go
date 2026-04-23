@@ -8,12 +8,12 @@ import (
 
 // Config holds client configuration for connecting to the Soothe daemon.
 type Config struct {
-	DaemonURL          string        // WebSocket URL for Soothe daemon
-	VerbosityLevel     string        // Event verbosity: quiet/minimal/normal/detailed/debug
-	MaxRetries         int           // Maximum connection retry attempts
-	ReconnectDelay     time.Duration // Initial reconnect delay
-	HeartbeatInterval  time.Duration // Application-level heartbeat interval
-	DaemonReadyTimeout time.Duration // Handshake: wait for daemon_ready
+	DaemonURL           string        // WebSocket URL for Soothe daemon
+	VerbosityLevel      string        // Event verbosity: quiet/minimal/normal/detailed/debug
+	MaxRetries          int           // Maximum connection retry attempts
+	ReconnectDelay      time.Duration // Initial reconnect delay
+	HeartbeatInterval   time.Duration // Application-level heartbeat interval
+	DaemonReadyTimeout  time.Duration // Handshake: wait for daemon_ready
 	ThreadStatusTimeout time.Duration // After new_thread: wait for status with thread_id
 	SubscriptionTimeout time.Duration // After subscribe_thread: wait for subscription_confirmed
 }
