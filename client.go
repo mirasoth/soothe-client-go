@@ -15,11 +15,12 @@ import (
 // It is NOT safe for concurrent use from multiple goroutines except where noted.
 // After Close(), a new Client must be created to reconnect.
 type Client struct {
-	url    string
-	config *Config
-	conn   *websocket.Conn
-	mu     sync.Mutex // guards conn writes and closed flag
-	closed bool
+	url              string
+	config           *Config
+	conn             *websocket.Conn
+	mu               sync.Mutex // guards conn writes and closed flag
+	closed           bool
+	heartbeatTracker *HeartbeatTracker // optional heartbeat tracker for daemon health monitoring
 }
 
 // NewClient creates a new Soothe daemon WebSocket client.
@@ -28,6 +29,13 @@ func NewClient(url string, cfg *Config) *Client {
 		cfg = DefaultConfig()
 	}
 	return &Client{url: url, config: cfg}
+}
+
+// NewClientWithHeartbeat creates a client with automatic heartbeat tracking enabled.
+func NewClientWithHeartbeat(url string, cfg *Config) *Client {
+	c := NewClient(url, cfg)
+	c.EnableHeartbeatTracking()
+	return c
 }
 
 // Connect dials the Soothe daemon WebSocket and completes the HTTP upgrade.
@@ -74,6 +82,56 @@ func (c *Client) IsConnected() bool {
 	return c.conn != nil && !c.closed
 }
 
+// EnableHeartbeatTracking enables automatic heartbeat tracking for daemon health monitoring.
+// The tracker will process heartbeat events as they are received.
+func (c *Client) EnableHeartbeatTracking() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.heartbeatTracker == nil {
+		c.heartbeatTracker = NewHeartbeatTracker()
+	}
+}
+
+// EnableHeartbeatTrackingWithThreshold enables heartbeat tracking with a custom alive threshold.
+func (c *Client) EnableHeartbeatTrackingWithThreshold(threshold time.Duration) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.heartbeatTracker = NewHeartbeatTrackerWithThreshold(threshold)
+}
+
+// DisableHeartbeatTracking disables heartbeat tracking and clears the tracker.
+func (c *Client) DisableHeartbeatTracking() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.heartbeatTracker = nil
+}
+
+// GetHeartbeatTracker returns the heartbeat tracker if enabled, or nil if disabled.
+func (c *Client) GetHeartbeatTracker() *HeartbeatTracker {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.heartbeatTracker
+}
+
+// GetDaemonHealth returns the current daemon health status if heartbeat tracking is enabled.
+// Returns nil if heartbeat tracking is not enabled.
+func (c *Client) GetDaemonHealth() *DaemonHealth {
+	c.mu.Lock()
+	tracker := c.heartbeatTracker
+	c.mu.Unlock()
+	if tracker == nil {
+		return nil
+	}
+	return tracker.GetHealth()
+}
+
+// IsDaemonAlive returns true if the daemon is considered alive based on heartbeat tracking.
+// Returns false if heartbeat tracking is not enabled.
+func (c *Client) IsDaemonAlive() bool {
+	health := c.GetDaemonHealth()
+	return health != nil && health.IsAlive
+}
+
 // SendMessage serialises msg as JSON and sends it as a WebSocket text frame.
 func (c *Client) SendMessage(ctx context.Context, msg interface{}) error {
 	c.mu.Lock()
@@ -96,12 +154,15 @@ func (c *Client) SendMessage(ctx context.Context, msg interface{}) error {
 // ReceiveMessages starts reading frames from the daemon and returns decoded
 // messages on the returned channel. The channel is closed when the connection
 // ends or the context is cancelled.
+// If heartbeat tracking is enabled, heartbeat events are automatically processed
+// before being forwarded to the channel.
 func (c *Client) ReceiveMessages(ctx context.Context) (<-chan interface{}, error) {
 	c.mu.Lock()
 	if c.conn == nil || c.closed {
 		c.mu.Unlock()
 		return nil, fmt.Errorf("soothe: not connected")
 	}
+	tracker := c.heartbeatTracker
 	c.mu.Unlock()
 	ch := make(chan interface{}, 100)
 	go func() {
@@ -142,6 +203,13 @@ func (c *Client) ReceiveMessages(ctx context.Context) (<-chan interface{}, error
 				msg, err := DecodeMessage(frame)
 				if err != nil || msg == nil {
 					continue
+				}
+				// Automatically process heartbeat events if tracking is enabled
+				if tracker != nil {
+					// Convert to map for heartbeat processing
+					if m, ok := msg.(map[string]interface{}); ok {
+						tracker.ProcessHeartbeatEvent(m)
+					}
 				}
 				select {
 				case ch <- msg:
