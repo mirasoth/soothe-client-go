@@ -255,10 +255,19 @@ type LoopInputMessage struct {
 // EventMessage represents a streaming event from the agent.
 type EventMessage struct {
 	BaseMessage
-	ThreadID  string                 `json:"thread_id,omitempty"`
-	Namespace string                 `json:"namespace"`
-	Data      map[string]interface{} `json:"data"`
-	Timestamp time.Time              `json:"timestamp,omitempty"`
+	ThreadID  string      `json:"thread_id,omitempty"`
+	Namespace interface{} `json:"namespace,omitempty"`
+	Mode      string      `json:"mode,omitempty"`
+	Data      interface{} `json:"data"`
+	Timestamp time.Time   `json:"timestamp,omitempty"`
+}
+
+// LoopAIMessage represents a loop-tagged assistant payload forwarded on
+// mode="messages" streams.
+type LoopAIMessage struct {
+	Type    string      `json:"type,omitempty"`
+	Content interface{} `json:"content,omitempty"`
+	Phase   string      `json:"phase,omitempty"`
 }
 
 // StatusResponse represents a status acknowledgment.
@@ -1002,11 +1011,11 @@ func ExtractSootheThreadID(msg interface{}) (string, bool) {
 		if m.ThreadID != "" {
 			return m.ThreadID, true
 		}
-		if m.Data != nil {
-			if s, ok := m.Data["thread_id"].(string); ok && s != "" {
+		if dataMap, ok := m.Data.(map[string]interface{}); ok && dataMap != nil {
+			if s, ok := dataMap["thread_id"].(string); ok && s != "" {
 				return s, true
 			}
-			if s, ok := m.Data["threadId"].(string); ok && s != "" {
+			if s, ok := dataMap["threadId"].(string); ok && s != "" {
 				return s, true
 			}
 		}
@@ -1055,6 +1064,118 @@ func ExtractSootheThreadID(msg interface{}) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// EventType returns the normalized event type for custom events and legacy
+// namespace-based events.
+func (e EventMessage) EventType() string {
+	if m, ok := e.Data.(map[string]interface{}); ok {
+		if t, ok := m["type"].(string); ok && t != "" {
+			return t
+		}
+	}
+	if s, ok := e.Namespace.(string); ok && s != "" {
+		return s
+	}
+	return ""
+}
+
+// NamespaceParts returns namespace path segments regardless of whether the wire
+// payload encoded namespace as string or list.
+func (e EventMessage) NamespaceParts() []string {
+	switch ns := e.Namespace.(type) {
+	case []string:
+		return ns
+	case []interface{}:
+		parts := make([]string, 0, len(ns))
+		for _, p := range ns {
+			if s, ok := p.(string); ok {
+				parts = append(parts, s)
+			}
+		}
+		return parts
+	case string:
+		if ns == "" {
+			return nil
+		}
+		return strings.Split(ns, ".")
+	default:
+		return nil
+	}
+}
+
+// LoopAIMessage extracts loop-tagged assistant messages from mode="messages"
+// events. Returns false for non-message events or non-assistant payloads.
+func (e EventMessage) LoopAIMessage() (LoopAIMessage, bool) {
+	var zero LoopAIMessage
+	if e.Mode != "messages" {
+		return zero, false
+	}
+	items, ok := e.Data.([]interface{})
+	if !ok || len(items) == 0 {
+		return zero, false
+	}
+	msgMap, ok := items[0].(map[string]interface{})
+	if !ok {
+		return zero, false
+	}
+
+	var msg LoopAIMessage
+	if t, _ := msgMap["type"].(string); t != "" {
+		msg.Type = t
+	}
+	msg.Content = msgMap["content"]
+	if phase, _ := msgMap["phase"].(string); phase != "" {
+		msg.Phase = phase
+	}
+	if msg.Phase == "" {
+		return zero, false
+	}
+	if !isLoopAssistantPhase(msg.Phase) {
+		return zero, false
+	}
+	if msg.Type == "" {
+		msg.Type = "ai"
+	}
+	return msg, true
+}
+
+func isLoopAssistantPhase(phase string) bool {
+	switch phase {
+	case "goal_completion", "chitchat", "quiz", "autonomous_goal":
+		return true
+	default:
+		return false
+	}
+}
+
+// LoopAIText extracts plain text from loop-tagged assistant payload content.
+func (m LoopAIMessage) LoopAIText() string {
+	switch c := m.Content.(type) {
+	case string:
+		return c
+	case []interface{}:
+		var b strings.Builder
+		for _, item := range c {
+			if s, ok := item.(string); ok {
+				b.WriteString(s)
+				continue
+			}
+			if blk, ok := item.(map[string]interface{}); ok {
+				if t, ok := blk["text"].(string); ok {
+					b.WriteString(t)
+				}
+			}
+		}
+		return b.String()
+	default:
+		if blk, ok := c.(map[string]interface{}); ok {
+			if t, ok := blk["text"].(string); ok {
+				return t
+			}
+		}
+		return ""
+	}
 }
 
 // SplitSootheWirePayload returns one or more JSON objects from a single WebSocket text payload.

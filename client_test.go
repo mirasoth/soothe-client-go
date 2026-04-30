@@ -79,7 +79,7 @@ func testNDJSONHandler(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 	conn.ReadMessage() // consume one message
 	conn.WriteMessage(websocket.TextMessage, []byte(
-		`{"type":"event","namespace":"soothe.output.chitchat.responded","data":{"text":"hello"}}`+"\n"+
+		`{"type":"event","thread_id":"ndjson-thread","namespace":[],"mode":"messages","data":[{"type":"AIMessageChunk","content":"hello","phase":"chitchat"},{}]}`+"\n"+
 			`{"type":"status","state":"idle","thread_id":"ndjson-thread"}`,
 	))
 }
@@ -278,6 +278,55 @@ func TestClient_NDJSONReceive(t *testing.T) {
 	}
 	if count != 2 {
 		t.Errorf("expected 2 messages from NDJSON frame, got %d", count)
+	}
+}
+
+func TestClient_ReceiveMessages_LoopAIMessageEvent(t *testing.T) {
+	ts := newTestServer(testNDJSONHandler)
+	defer ts.Close()
+
+	client := NewClient(wsURL(ts.URL), nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := client.Connect(ctx); err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	defer client.Close()
+
+	ch, err := client.ReceiveMessages(ctx)
+	if err != nil {
+		t.Fatalf("ReceiveMessages: %v", err)
+	}
+	if err := client.SendMessage(ctx, BaseMessage{Type: "trigger"}); err != nil {
+		t.Fatalf("send: %v", err)
+	}
+
+	timeout := time.After(3 * time.Second)
+	for {
+		select {
+		case raw := <-ch:
+			if raw == nil {
+				continue
+			}
+			event, ok := raw.(EventMessage)
+			if !ok {
+				continue
+			}
+			loopMsg, ok := event.LoopAIMessage()
+			if !ok {
+				continue
+			}
+			if loopMsg.Phase != "chitchat" {
+				t.Fatalf("unexpected phase: %s", loopMsg.Phase)
+			}
+			if loopMsg.LoopAIText() != "hello" {
+				t.Fatalf("unexpected loop text: %q", loopMsg.LoopAIText())
+			}
+			return
+		case <-timeout:
+			t.Fatal("timeout waiting for loop ai message event")
+		}
 	}
 }
 

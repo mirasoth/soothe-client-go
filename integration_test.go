@@ -142,7 +142,7 @@ func TestIntegration_InputMessage(t *testing.T) {
 			eventCount++
 			switch m := msg.(type) {
 			case EventMessage:
-				t.Logf("Event #%d: namespace=%s", eventCount, m.Namespace)
+				t.Logf("Event #%d: mode=%s event_type=%s", eventCount, m.Mode, m.EventType())
 			case ErrorResponse:
 				t.Logf("Error: code=%s, message=%s", m.Code, m.Message)
 			default:
@@ -350,7 +350,11 @@ func TestIntegration_FullConversation(t *testing.T) {
 			}
 			switch m := msg.(type) {
 			case EventMessage:
-				eventTypes[m.Namespace]++
+				eventType := m.EventType()
+				if eventType == "" {
+					eventType = "event"
+				}
+				eventTypes[eventType]++
 			default:
 				eventTypes["other"]++
 			}
