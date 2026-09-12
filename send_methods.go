@@ -62,6 +62,9 @@ func (c *Client) SendInput(ctx context.Context, text string, opts ...InputOption
 	if o.clarificationAnswers != nil {
 		params["clarification_answers"] = o.clarificationAnswers
 	}
+	if o.autopilotRailID != "" {
+		params["autopilot_rail_id"] = o.autopilotRailID
+	}
 	return c.SendMessage(ctx, NewNotificationEnvelope("loop_input", params))
 }
 
@@ -83,6 +86,7 @@ type inputOptions struct {
 	interactionMode      string
 	clarificationAnswer  bool
 	clarificationAnswers []string
+	autopilotRailID      string
 }
 
 func WithLoopID(loopID string) InputOption {
@@ -157,6 +161,11 @@ func WithClarificationAnswer() InputOption {
 // WithClarificationAnswers sets per-question answers for multi-question clarifications.
 func WithClarificationAnswers(answers []string) InputOption {
 	return func(o *inputOptions) { o.clarificationAnswers = answers }
+}
+
+// WithAutopilotRailID sets the builtin rail id for loop-native autopilot.
+func WithAutopilotRailID(railID string) InputOption {
+	return func(o *inputOptions) { o.autopilotRailID = railID }
 }
 
 // SendCommand sends a slash command to the daemon (slash_command notification).

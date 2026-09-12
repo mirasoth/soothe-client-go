@@ -84,6 +84,7 @@ type InputOpts struct {
 	ResponseSchema       map[string]interface{}
 	ResponseSchemaName   string
 	ResponseSchemaStrict *bool
+	AutopilotRailID      string
 }
 
 // InputMessageForLoop builds a protocol-1 loop_input notification envelope.
@@ -120,6 +121,9 @@ func InputMessageForLoop(text, loopID string, attachments []map[string]interface
 		}
 		if opts.ResponseSchemaStrict != nil {
 			params["response_schema_strict"] = *opts.ResponseSchemaStrict
+		}
+		if s := strings.TrimSpace(opts.AutopilotRailID); s != "" {
+			params["autopilot_rail_id"] = s
 		}
 	}
 	env := soothe.NewNotificationEnvelope("loop_input", params)

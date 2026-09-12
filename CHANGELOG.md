@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.18] - 2026-09-13
+
+### Added
+- `autopilot_rail_id` support across all layers: `WithAutopilotRailID` functional option on `SendInput`, `InputOpts.AutopilotRailID` field on the `appkit.InputOpts` struct, and `autopilot_rail_id` param emission in both `SendInput` and `InputMessageForLoop` for loop-native autopilot rail selection.
+
+### Changed
+- Handshake `ClientVersion` reports `0.4.18`
+
 ## [0.4.17] - 2026-09-08
 
 ### Added
