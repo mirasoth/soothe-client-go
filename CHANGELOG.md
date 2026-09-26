@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.19] - 2026-09-27
+
+### Fixed
+- `DaemonSession.SendTurn` now threads `AutopilotRailID` through `SendTurnOptions` to `WithAutopilotRailID`, completing the v0.4.18 feature that was incompletely shipped at the appkit layer.
+
+### Changed
+- Handshake `ClientVersion` reports `0.4.19`
+
 ## [0.4.18] - 2026-09-13
 
 ### Added

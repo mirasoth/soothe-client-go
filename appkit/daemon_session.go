@@ -213,6 +213,7 @@ type SendTurnOptions struct {
 	InteractionMode     string
 	ClarificationAnswer bool
 	IntentHint          string
+	AutopilotRailID     string
 }
 
 // SendTurn sends user input on the active loop.
@@ -247,6 +248,9 @@ func (s *DaemonSession) SendTurn(ctx context.Context, text string, opts *SendTur
 		}
 		if opts.IntentHint != "" {
 			inputOpts = append(inputOpts, soothe.WithIntentHint(opts.IntentHint))
+		}
+		if opts.AutopilotRailID != "" {
+			inputOpts = append(inputOpts, soothe.WithAutopilotRailID(opts.AutopilotRailID))
 		}
 	}
 	return s.client.SendInput(ctx, text, inputOpts...)
