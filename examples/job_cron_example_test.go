@@ -167,13 +167,12 @@ func Example_autopilotSubscribe() {
 	}
 	fmt.Printf("Subscribed to autopilot events (id length: %d)\n", len(subID))
 
-	// Consume autopilot events...
+	// Consume subscribed events...
 	go func() {
 		for msg := range eventCh {
 			if msg == nil {
 				return
 			}
-			// Look for soothe.system.autopilot.* events...
 			_ = msg
 		}
 	}()

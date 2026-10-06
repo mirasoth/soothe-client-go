@@ -137,10 +137,6 @@ func Example_eventConstants() {
 	fmt.Println(soothe.EventStrangeLoopStarted)
 	fmt.Println(soothe.EventStrangeLoopCompleted)
 
-	// Autopilot events.
-	fmt.Println(soothe.EventAutopilotStatusChanged)
-	fmt.Println(soothe.EventAutopilotGoalCompleted)
-
 	// Output events.
 	fmt.Println(soothe.EventFinalReport)
 	// Output:
@@ -152,8 +148,6 @@ func Example_eventConstants() {
 	// soothe.tool.execution.completed
 	// soothe.cognition.strange_loop.started
 	// soothe.cognition.strange_loop.completed
-	// soothe.system.autopilot.status.changed
-	// soothe.system.autopilot.goal.completed
 	// soothe.output.autonomous.final_report.reported
 }
 
