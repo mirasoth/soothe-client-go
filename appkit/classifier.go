@@ -118,9 +118,6 @@ func (cl *EventClassifier) IsDeliverableCompletionEvent(eventType string) bool {
 	case "status.idle", "status.stopped", soothe.STREAM_END, "idle_timeout", "query_timeout", "stream_closed":
 		return true
 	}
-	if eventType == soothe.EventFinalReport {
-		return true
-	}
 	if strings.HasPrefix(eventType, "soothe.protocol.message.") {
 		phase := strings.TrimPrefix(eventType, "soothe.protocol.message.")
 		return cl.isDeliverableLoopPhase(phase)
@@ -282,9 +279,6 @@ func (cl *EventClassifier) processChatEvent(msg interface{}, accumulated string,
 			dataType := eventType
 			if dt, ok := data["type"].(string); ok && dt != "" {
 				dataType = dt
-			}
-			if dataType == eventLoopHistoryReplayed {
-				return ChatEventResult{Terminal: ChatEventContinue}
 			}
 			if step, ok := cl.extractThinkingStep(dataType, data); ok {
 				return thinkingStepResult(step)

@@ -15,7 +15,7 @@ with a **loop-centric** API. Public entry points:
 ## WebSocket coverage (high level)
 
 1. **Loop lifecycle** — `loop_new`, `loop_list`, `loop_get`, `loop_tree`, `loop_prune`, `loop_delete`, `loop_reattach`, `loop_subscribe`, `loop_detach`, `loop_input`
-2. **Streaming** — `event`, `status`, NDJSON frames, verbosity on subscribe, `delivery_ack` on terminal frames
+2. **Streaming** — `event`, `status`, NDJSON frames, wire_tier on subscribe, `delivery_ack` on terminal frames
 3. **Skills / models** — `skills_list`, `models_list`, `invoke_skill`
 4. **Daemon** — `daemon_ready`, `daemon_status`, `daemon_shutdown`, `config_get`
 5. **Input** — `loop_input` / `SendInput` with `WithLoopID`, autonomous options, attachments

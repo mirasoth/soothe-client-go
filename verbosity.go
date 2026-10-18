@@ -9,39 +9,37 @@ const (
 	VerbosityDebug  VerbosityLevel = "debug"
 )
 
-// VerbosityTier represents the minimum verbosity level at which content is visible.
-// Lower tier values mean the content is visible at lower verbosity settings.
+// VerbosityTier is the visibility class for content, mirroring
+// soothe_nano.core.verbosity's binary model (NORMAL=1 / INTERNAL=99).
 type VerbosityTier int
 
 const (
-	TierQuiet    VerbosityTier = 0  // Always visible (errors, assistant text, final reports)
-	TierNormal   VerbosityTier = 1  // Standard progress (plan updates, milestones, agentic loop)
-	TierDetailed VerbosityTier = 2  // Detailed internals (protocol events, tool calls, subagent activity)
-	TierDebug    VerbosityTier = 3  // Everything including internals (thinking, heartbeats)
-	TierInternal VerbosityTier = 99 // Never shown at any level (implementation details)
+	TierNormal   VerbosityTier = 1  // client-visible (flows over the wire)
+	TierInternal VerbosityTier = 99 // daemon-side only, never leaves the daemon
 )
 
-// verbosityLevelValues maps VerbosityLevel strings to their integer values.
-var verbosityLevelValues = map[VerbosityLevel]int{
-	VerbosityQuiet:  0,
-	VerbosityNormal: 1,
-	VerbosityDebug:  3,
+// WireTierForVerbosity maps the user verbosity knob to the daemon's
+// loop_events wire_tier subscription param: quiet -> "compact", else "full".
+func WireTierForVerbosity(verbosity VerbosityLevel) string {
+	if verbosity == VerbosityQuiet {
+		return "compact"
+	}
+	return "full"
 }
 
-// ShouldShow returns true if content at the given tier is visible at the given verbosity.
-func ShouldShow(tier VerbosityTier, verbosity VerbosityLevel) bool {
-	if tier == TierInternal {
-		return false
-	}
-	level, ok := verbosityLevelValues[verbosity]
-	if !ok {
-		level = 1 // default to normal
-	}
-	return int(tier) <= level
+// ShouldShow reports whether content at the given tier is visible to the
+// client. Wire-level filtering is decided daemon-side by wire_tier; locally
+// only INTERNAL-tier content is hidden.
+func ShouldShow(tier VerbosityTier) bool {
+	return tier != TierInternal
 }
 
 // IsValidVerbosityLevel checks whether a string is a valid verbosity level.
 func IsValidVerbosityLevel(s string) bool {
-	_, ok := verbosityLevelValues[VerbosityLevel(s)]
-	return ok
+	switch VerbosityLevel(s) {
+	case VerbosityQuiet, VerbosityNormal, VerbosityDebug:
+		return true
+	default:
+		return false
+	}
 }

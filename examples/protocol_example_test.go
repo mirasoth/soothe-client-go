@@ -123,7 +123,6 @@ func Example_parseNamespace() {
 func Example_eventConstants() {
 	// Plan events.
 	fmt.Println(soothe.EventPlanCreated)
-	fmt.Println(soothe.EventPlanBatchStarted)
 
 	// Goal events.
 	fmt.Println(soothe.EventGoalCompleted)
@@ -135,20 +134,19 @@ func Example_eventConstants() {
 
 	// StrangeLoop events.
 	fmt.Println(soothe.EventStrangeLoopStarted)
-	fmt.Println(soothe.EventStrangeLoopCompleted)
+	fmt.Println(soothe.EventStrangeLoopStepStarted)
 
-	// Output events.
-	fmt.Println(soothe.EventFinalReport)
+	// Error events.
+	fmt.Println(soothe.EventGeneralFailed)
 	// Output:
 	// soothe.cognition.plan.created
-	// soothe.cognition.plan.batch.started
 	// soothe.cognition.goal.completed
 	// soothe.cognition.goal.failed
-	// soothe.tool.execution.started
-	// soothe.tool.execution.completed
+	// soothe.tool.invocation.started
+	// soothe.tool.invocation.completed
 	// soothe.cognition.strange_loop.started
-	// soothe.cognition.strange_loop.completed
-	// soothe.output.autonomous.final_report.reported
+	// soothe.cognition.strange_loop.step.started
+	// soothe.error.general.failed
 }
 
 // Example_extractSootheLoopID extracts a loop id from various daemon message

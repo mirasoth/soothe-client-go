@@ -6,9 +6,8 @@ package soothe
 
 // Plan events
 const (
-	EventPlanCreated      = "soothe.cognition.plan.created"
-	EventPlanBatchStarted = "soothe.cognition.plan.batch.started"
-	EventPlanReflected    = "soothe.cognition.plan.reflected"
+	EventPlanCreated   = "soothe.cognition.plan.created"
+	EventPlanReflected = "soothe.cognition.plan.reflected"
 )
 
 // Goal events
@@ -47,11 +46,10 @@ const (
 	EventCardReplayEnd   = "soothe.card.replay.end"
 )
 
-// Tool events
+// Tool events (host: soothe.ux.types ESSENTIAL_EVENT_TYPES)
 const (
-	EventToolStarted   = "soothe.tool.execution.started"
-	EventToolCompleted = "soothe.tool.execution.completed"
-	EventToolError     = "soothe.tool.execution.error"
+	EventToolStarted   = "soothe.tool.invocation.started"
+	EventToolCompleted = "soothe.tool.invocation.completed"
 )
 
 // Stream tool call events
@@ -76,17 +74,6 @@ const (
 const (
 	EventBranchCreated      = "soothe.cognition.branch.created"
 	EventBranchRetryStarted = "soothe.cognition.branch.retry.started"
-)
-
-// Message protocol events (stream metadata)
-const (
-	EventMessageReceived = "soothe.protocol.message.received"
-	EventMessageSent     = "soothe.protocol.message.sent"
-)
-
-// Output events
-const (
-	EventFinalReport = "soothe.output.autonomous.final_report.reported"
 )
 
 // Error events

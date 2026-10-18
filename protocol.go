@@ -1,6 +1,7 @@
 package soothe
 
 import (
+	"bytes"
 	"encoding/json"
 	"strings"
 	"time"
@@ -15,7 +16,7 @@ const ProtoVersion = "1"
 var DefaultClientCapabilities = []string{"streaming", "batch", "heartbeat", "receipts"}
 
 // ClientVersion reported in the connection_init handshake.
-const ClientVersion = "0.4.20"
+const ClientVersion = "0.4.21"
 
 // ---------------------------------------------------------------------------
 // Protocol-1 wire envelope
@@ -167,6 +168,25 @@ func DecodeMessage(data []byte) (interface{}, error) {
 		return nil, nil
 	}
 
+	// Bare JSON-array batch frames: the daemon may send a top-level array
+	// of envelopes in one frame. Decode each element; invalid elements are
+	// skipped. Returns []interface{} so callers expand via ExpandWireMessages.
+	if trimmed := bytes.TrimLeft(data, " \t\r\n"); len(trimmed) > 0 && trimmed[0] == '[' {
+		var raws []json.RawMessage
+		if err := json.Unmarshal(data, &raws); err != nil {
+			return nil, err
+		}
+		out := make([]interface{}, 0, len(raws))
+		for _, raw := range raws {
+			decoded, err := DecodeMessage(raw)
+			if err != nil || decoded == nil {
+				continue
+			}
+			out = append(out, decoded)
+		}
+		return out, nil
+	}
+
 	// First peek at the type to dispatch.
 	var probe struct {
 		Proto string `json:"proto"`
@@ -309,6 +329,14 @@ func nextToEventMessage(env Envelope) (EventMessage, bool) {
 func ExpandWireMessages(msg interface{}) []interface{} {
 	if msg == nil {
 		return nil
+	}
+	// Bare batch frames decode to a []interface{} of sub-messages.
+	if arr, ok := msg.([]interface{}); ok {
+		var out []interface{}
+		for _, sub := range arr {
+			out = append(out, ExpandWireMessages(sub)...)
+		}
+		return out
 	}
 	m, ok := msg.(map[string]interface{})
 	if !ok {

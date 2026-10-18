@@ -89,7 +89,7 @@ func asString(v interface{}) string {
 }
 
 // ---------------------------------------------------------------------------
-// Connect with retries (mirrors soothe_sdk.client.session.connect_websocket_with_retries)
+// Connect with retries, tolerating daemon cold-start races
 // ---------------------------------------------------------------------------
 
 // ConnectWithRetries attempts to connect to the Soothe daemon with bounded retries.

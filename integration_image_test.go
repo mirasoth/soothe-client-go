@@ -106,7 +106,7 @@ func TestIntegration_ImageUnderstanding(t *testing.T) {
 				eventTypes[eventType]++
 
 				// Check for loop-tagged assistant output or final report indicating the model processed the image
-				if _, ok := m.LoopAIMessage(); ok || eventType == EventFinalReport {
+				if _, ok := m.LoopAIMessage(); ok {
 					gotAIResponse = true
 					t.Logf("Received AI response event: %s", eventType)
 				}

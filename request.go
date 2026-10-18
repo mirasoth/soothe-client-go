@@ -155,8 +155,9 @@ func (c *Client) ListModels(ctx context.Context, timeout time.Duration) (map[str
 }
 
 // InvokeSkill resolves a skill on the daemon host and receives echo.
-// interactionMode sets the CoreAgent interaction mode ("agent" / "ask") for
-// the synthetic turn; pass "" to let the daemon fall back to its default.
+// interactionMode sets the CoreAgent interaction mode ("agent" / "ask" /
+// "plan" / "bypass") for the synthetic turn; pass "" to let the daemon
+// fall back to its default.
 func (c *Client) InvokeSkill(ctx context.Context, skill, args, interactionMode string, timeout time.Duration) (map[string]interface{}, error) {
 	if timeout <= 0 {
 		timeout = 120 * time.Second
@@ -328,8 +329,10 @@ func (c *Client) LoopReattach(ctx context.Context, loopID string, timeout time.D
 }
 
 // LoopSubscribe subscribes to loop events and waits for the subscription
-// confirmation `next` frame. Pass empty verbosity to omit the
-// field (daemon default). Returns a map describing the subscription.
+// confirmation `next` frame. verbosity (quiet/normal/debug) maps to the
+// daemon's wire_tier param (quiet -> "compact", else "full"); pass an
+// empty string to omit the field (daemon default "full"). Returns a map
+// describing the subscription.
 //
 // Multiplexer-aware: when a ReceiveMessages reader is active, the confirmation
 // `next` frame is routed via the mux subscription channel instead of calling
@@ -340,7 +343,7 @@ func (c *Client) LoopSubscribe(ctx context.Context, loopID string, verbosity str
 	}
 	params := map[string]interface{}{"loop_id": loopID}
 	if verbosity != "" {
-		params["verbosity"] = verbosity
+		params["wire_tier"] = WireTierForVerbosity(VerbosityLevel(verbosity))
 	}
 	env := NewSubscribeEnvelope("loop_events", params)
 	if err := c.SendMessage(ctx, env); err != nil {

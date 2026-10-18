@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// CheckDaemonStatus checks daemon status via RPC (mirrors soothe_sdk.client.helpers.check_daemon_status).
+// CheckDaemonStatus checks daemon status via RPC.
 func CheckDaemonStatus(ctx context.Context, client *Client, timeout time.Duration) (map[string]interface{}, error) {
 	if timeout <= 0 {
 		timeout = 5 * time.Second
@@ -33,8 +33,7 @@ func IsDaemonLive(wsURL string, timeout time.Duration) bool {
 	return err == nil
 }
 
-// RequestDaemonShutdown requests daemon shutdown via RPC
-// (mirrors soothe_sdk.client.helpers.request_daemon_shutdown).
+// RequestDaemonShutdown requests daemon shutdown via RPC.
 func RequestDaemonShutdown(ctx context.Context, client *Client, timeout time.Duration) error {
 	if timeout <= 0 {
 		timeout = 10 * time.Second
@@ -49,8 +48,7 @@ func RequestDaemonShutdown(ctx context.Context, client *Client, timeout time.Dur
 	return nil
 }
 
-// FetchSkillsCatalog fetches the skills catalog via RPC
-// (mirrors soothe_sdk.client.helpers.fetch_skills_catalog).
+// FetchSkillsCatalog fetches the skills catalog via RPC.
 func FetchSkillsCatalog(ctx context.Context, client *Client, timeout time.Duration) ([]map[string]interface{}, error) {
 	if timeout <= 0 {
 		timeout = 15 * time.Second
@@ -76,8 +74,7 @@ func FetchSkillsCatalog(ctx context.Context, client *Client, timeout time.Durati
 	return result, nil
 }
 
-// FetchConfigSection fetches a daemon config section via RPC
-// (mirrors soothe_sdk.client.helpers.fetch_config_section).
+// FetchConfigSection fetches a daemon config section via RPC.
 func FetchConfigSection(ctx context.Context, client *Client, section string, timeout time.Duration) (map[string]interface{}, error) {
 	if timeout <= 0 {
 		timeout = 5 * time.Second
@@ -97,8 +94,7 @@ func FetchConfigSection(ctx context.Context, client *Client, section string, tim
 	return resp, nil
 }
 
-// RequestDaemonConfigReload requests a config reload on the daemon via RPC
-// (mirrors soothe_sdk.client.helpers.request_daemon_config_reload).
+// RequestDaemonConfigReload requests a config reload on the daemon via RPC.
 func RequestDaemonConfigReload(ctx context.Context, client *Client, timeout time.Duration) error {
 	if timeout <= 0 {
 		timeout = 10 * time.Second

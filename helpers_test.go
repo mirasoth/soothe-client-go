@@ -646,3 +646,59 @@ func TestSendLoopSubscribe_UsesSubscribeEnvelope(t *testing.T) {
 		t.Fatalf("SendLoopSubscribe: %v", err)
 	}
 }
+
+func TestLoopSubscribe_SendsWireTier(t *testing.T) {
+	var gotWireTier string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer func() { _ = conn.Close() }()
+
+		for {
+			_, msg, err := conn.ReadMessage()
+			if err != nil {
+				return
+			}
+			var m map[string]interface{}
+			_ = json.Unmarshal(msg, &m)
+			if isConnectionInit(m) {
+				testSendHandshake(conn, m)
+				continue
+			}
+			params, _ := m["params"].(map[string]interface{})
+			if params != nil {
+				if vt, ok := params["wire_tier"].(string); ok {
+					gotWireTier = vt
+				}
+				if _, ok := params["verbosity"]; ok {
+					t.Errorf("legacy verbosity param sent: %v", params["verbosity"])
+				}
+			}
+			id, _ := m["id"].(string)
+			testSendNext(conn, id, map[string]interface{}{
+				"event":   "subscribed",
+				"loop_id": "loop-123",
+				"success": true,
+			})
+		}
+	}))
+	defer ts.Close()
+
+	client := NewClient(wsURL(ts.URL), nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := client.Connect(ctx); err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	defer func() { _ = client.Close() }()
+
+	if _, err := client.LoopSubscribe(ctx, "loop-123", "quiet", 3*time.Second); err != nil {
+		t.Fatalf("LoopSubscribe: %v", err)
+	}
+	if gotWireTier != "compact" {
+		t.Errorf("wire_tier = %q, want compact", gotWireTier)
+	}
+}

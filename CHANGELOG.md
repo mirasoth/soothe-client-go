@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.21] - 2026-10-18
+
+### Added
+- Wire-golden contract test: every case of the host `tests/wire_fixtures/wire_golden.json` fixture is decoded through the client codec (split → decode → expand) with the fixture sha256 pinned in the test
+
+### Changed
+- Adapt to host soothe v1.2.0 wire surface:
+  - `DecodeMessage` decodes bare JSON-array batch frames, decoding each element for expansion (arrays previously failed unmarshal and frames were silently dropped)
+  - `LoopSubscribe` sends the daemon-read `wire_tier` param (quiet → `"compact"`, else `"full"`) instead of the ignored `verbosity` param
+  - Verbosity tiers collapsed to nano 2.0's binary model (`TierNormal`=1 / `TierInternal`=99); the quiet/normal/debug knob maps to `wire_tier` via the new `WireTierForVerbosity`, and `ShouldShow` takes only the tier
+  - Thinking-step allowlist pruned to host-produced types (`soothe.cognition.strange_loop.step.started/queued/completed`, `replay_complete`, plan/goal/tool milestones)
+  - Tool event constants repointed to host names: `EventToolStarted` / `EventToolCompleted` are now `soothe.tool.invocation.started` / `soothe.tool.invocation.completed`
+  - `interaction_mode` docs list the full mode set (agent / ask / plan / bypass)
+
+### Removed
+- Dead event constants with no host producer: `EventPlanBatchStarted` (host moved to `soothe.internal.plan.batch.started`, never broadcast), `EventMessageReceived`, `EventMessageSent`, `EventFinalReport`, `EventToolError`
+- Dead inbound drop-priority branch for `soothe.ux.stream_tool_wire.tool_call_updates_batch` (live type is the bare `tool_call_updates_batch` envelope)
+- Dissolved `soothe_sdk` mentions from package docs
+
+### Changed
+- Handshake `ClientVersion` reports `0.4.21`
+
 ## [0.4.20] - 2026-10-07
 
 ### Removed

@@ -147,7 +147,8 @@ func WithClarificationMode(mode string) InputOption {
 	return func(o *inputOptions) { o.clarificationMode = mode }
 }
 
-// WithInteractionMode sets the CoreAgent interaction mode ("agent" / "ask").
+// WithInteractionMode sets the CoreAgent interaction mode ("agent" / "ask" /
+// "plan" / "bypass").
 // When empty the daemon falls back to its configured default.
 func WithInteractionMode(mode string) InputOption {
 	return func(o *inputOptions) { o.interactionMode = mode }

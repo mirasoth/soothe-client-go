@@ -70,9 +70,6 @@ func InboundFrameDropPriority(event map[string]interface{}) int {
 				if hasPrefix(customType, "soothe.error.") || customType == "stream_degraded" {
 					return DropPriorityCritical
 				}
-				if customType == "soothe.ux.stream_tool_wire.tool_call_updates_batch" {
-					return DropPriorityHigh
-				}
 			}
 		}
 		if mode == "messages" {

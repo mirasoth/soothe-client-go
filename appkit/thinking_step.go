@@ -7,25 +7,18 @@ import (
 	soothe "github.com/mirasoth/soothe-client-go"
 )
 
-// eventLoopHistoryReplayed is the daemon's replay completion signal
-// (internal; not exported by soothe-client-go).
-const eventLoopHistoryReplayed = "soothe.lifecycle.loop.history.replayed"
-
 const maxThinkingStepRunes = 280
 
 // Default thinking-step event allowlist. Overridable via
 // ClassifierConfig.ThinkingStepEvents.
 var defaultThinkingStepEvents = map[string]bool{
-	"soothe.cognition.plan.step.started":   true,
-	"soothe.cognition.plan.step.completed": true,
-	"soothe.cognition.plan.step.failed":    true,
-	"soothe.lifecycle.iteration.started":   true,
-	"soothe.agent.loop.step.started":       true,
-	"soothe.agent.loop.started":            true,
-	soothe.EventPlanBatchStarted:           true,
-	soothe.EventPlanCreated:                true,
-	soothe.EventGoalCreated:                true,
-	soothe.EventToolStarted:                true,
+	soothe.EventStrangeLoopStepStarted:   true,
+	soothe.EventStrangeLoopStepQueued:    true,
+	soothe.EventStrangeLoopStepCompleted: true,
+	soothe.EventReplayComplete:           true,
+	soothe.EventPlanCreated:              true,
+	soothe.EventGoalCreated:              true,
+	soothe.EventToolStarted:              true,
 }
 
 // extractThinkingStep maps an allowlisted progress event to one structured UI
@@ -47,38 +40,21 @@ func (cl *EventClassifier) extractThinkingStep(eventType string, data map[string
 
 	var line string
 	switch eventType {
-	case "soothe.cognition.plan.step.started":
-		line = formatPlanStepLine(data, "")
-	case "soothe.cognition.plan.step.completed":
-		line = formatPlanStepLine(data, "done")
-	case "soothe.cognition.plan.step.failed":
-		stepID := strField(data, "step_id")
-		errMsg := strField(data, "error")
-		switch {
-		case stepID != "" && errMsg != "":
-			line = fmt.Sprintf("Step %s failed: %s", stepID, errMsg)
-		case stepID != "":
-			line = fmt.Sprintf("Step %s failed", stepID)
-		case errMsg != "":
-			line = fmt.Sprintf("Step failed: %s", errMsg)
-		}
-	case "soothe.agent.loop.step.started":
-		line = formatAgentStepLine(data, "")
-	case soothe.EventPlanBatchStarted:
-		if n, ok := data["parallel_count"].(float64); ok && n > 0 {
-			line = fmt.Sprintf("Running %d steps in parallel", int(n))
-		}
-	case soothe.EventPlanCreated, "soothe.agent.loop.started":
+	case soothe.EventStrangeLoopStepStarted:
+		line = formatStepLine(data, "")
+	case soothe.EventStrangeLoopStepQueued:
+		line = formatStepLine(data, "queued")
+	case soothe.EventStrangeLoopStepCompleted:
+		line = formatStepCompletionLine(data)
+	case soothe.EventReplayComplete:
+		line = "History replayed"
+	case soothe.EventPlanCreated:
 		if g := strField(data, "goal"); g != "" {
 			line = "Goal: " + g
 		}
 	case soothe.EventGoalCreated:
 		if g := strField(data, "friendly_message", "description"); g != "" {
 			line = "Goal: " + g
-		}
-	case "soothe.lifecycle.iteration.started":
-		if g := strField(data, "goal_description"); g != "" {
-			line = "Iteration: " + g
 		}
 	case soothe.EventToolStarted:
 		if name := strField(data, "tool_name", "name"); name != "" {
@@ -99,7 +75,7 @@ func (cl *EventClassifier) extractThinkingStep(eventType string, data map[string
 	return line, true
 }
 
-func formatPlanStepLine(data map[string]interface{}, suffix string) string {
+func formatStepLine(data map[string]interface{}, suffix string) string {
 	stepID := strField(data, "step_id")
 	desc := strField(data, "description")
 	switch {
@@ -120,19 +96,27 @@ func formatPlanStepLine(data map[string]interface{}, suffix string) string {
 	}
 }
 
-func formatAgentStepLine(data map[string]interface{}, suffix string) string {
+func formatStepCompletionLine(data map[string]interface{}) string {
 	stepID := strField(data, "step_id")
-	desc := strField(data, "description")
-	switch {
-	case stepID != "" && desc != "":
-		return fmt.Sprintf("Step %s: %s", stepID, desc)
-	case desc != "":
-		if suffix != "" {
-			return fmt.Sprintf("Step: %s", suffix)
+	summary := strField(data, "summary")
+	if failed, ok := data["success"].(bool); ok && !failed {
+		switch {
+		case stepID != "" && summary != "":
+			return fmt.Sprintf("Step %s failed: %s", stepID, summary)
+		case stepID != "":
+			return fmt.Sprintf("Step %s failed", stepID)
+		case summary != "":
+			return "Step failed: " + summary
 		}
-		return fmt.Sprintf("Step: %s", desc)
+		return ""
+	}
+	switch {
+	case stepID != "" && summary != "":
+		return fmt.Sprintf("Step %s done: %s", stepID, summary)
 	case stepID != "":
-		return fmt.Sprintf("Step %s", stepID)
+		return fmt.Sprintf("Step %s done", stepID)
+	case summary != "":
+		return "Step: " + summary
 	default:
 		return ""
 	}
