@@ -12,7 +12,7 @@ import (
 
 // goldenWireSHA256 pins the host wire fixture (tests/wire_fixtures/wire_golden.json).
 // Regenerating the fixture on the host requires updating this pin in the same change.
-const goldenWireSHA256 = "ba5a5a408fc2c259b768eae2915289de1820a931da37aad30fdd410d52b16627"
+const goldenWireSHA256 = "38904a5672882b345a3f9786566893220e1e37da51336df22301ade30b5a6cef"
 
 // loadWireGolden loads the pinned fixture and returns its named cases.
 func loadWireGolden(t *testing.T) map[string]interface{} {
